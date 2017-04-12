@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'spec_helper'
 
 module Segmentio
@@ -83,7 +84,7 @@ module Segmentio
             queue << Requested::TRACK
             queue << Requested::TRACK
             queue << Requested::TRACK
-            worker = Segment::Analytics::Worker.new queue, 'testsecret', :batch_size => 1
+            worker = Segmentio::Analytics::Worker.new queue, 'testsecret', :batch_size => 1
             worker.run
 
             expect(queue).to be_empty
