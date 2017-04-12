@@ -36,24 +36,35 @@ module Segmentio
         until Thread.current[:should_exit]
           return if @queue.empty?
 
-          @lock.synchronize do
-            until @batch.length >= @batch_size || @queue.empty?
-              @batch << @queue.pop
-            end
-          end
-
-          res = Request.new.post @write_key, @batch
-
-          @on_error.call res.status, res.error unless res.status == 200
-
-          @lock.synchronize { @batch.clear }
+          flush_queue
+          process_batch
         end
+
+        flush_queue until_empty: true
+        process_batch
       end
 
       # public: Check whether we have outstanding requests.
       #
       def is_requesting?
         @lock.synchronize { !@batch.empty? }
+      end
+
+      private
+
+      def flush_queue(until_empty: false)
+        use_batch = !until_empty
+        @lock.synchronize do
+          until (use_batch && @batch.length >= @batch_size) || @queue.empty?
+            @batch << @queue.pop
+          end
+        end
+      end
+
+      def process_batch
+        res = Request.new.post @write_key, @batch
+        @on_error.call res.status, res.error unless res.status == 200
+        @lock.synchronize { @batch.clear }
       end
     end
   end

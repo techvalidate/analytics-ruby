@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'spec_helper'
 
 module Segmentio
@@ -73,6 +74,21 @@ module Segmentio
           worker.run
 
           expect(queue).to be_empty
+        end
+
+        context 'should exit is set' do
+          it 'does not return until the queue is empty' do
+            allow_any_instance_of(Thread).to receive(:[]).with(:should_exit).and_return(false, true)
+
+            queue = Queue.new
+            queue << Requested::TRACK
+            queue << Requested::TRACK
+            queue << Requested::TRACK
+            worker = Segmentio::Analytics::Worker.new queue, 'testsecret', :batch_size => 1
+            worker.run
+
+            expect(queue).to be_empty
+          end
         end
       end
 
